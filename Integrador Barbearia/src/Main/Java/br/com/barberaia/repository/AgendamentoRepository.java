@@ -1,22 +1,44 @@
 package br.com.barbearia.repository;
 
 import br.com.barbearia.entity.Agendamento;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.EntityManager;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
+public class AgendamentoRepository {
 
-    List<Agendamento> findByDataHoraBetween(LocalDateTime inicio, LocalDateTime fim);
+    private EntityManager em;
 
-    @Query("SELECT a FROM Agendamento a WHERE a.cliente.nome LIKE %:nome%")
-    List<Agendamento> buscarPorNomeCliente(String nome);
+    public AgendamentoRepository(EntityManager em) {
+        this.em = em;
+    }
 
-    @Query("SELECT COUNT(a) FROM Agendamento a")
-    long contarAgendamentos();
+    public void salvar(Agendamento agendamento) {
+        em.getTransaction().begin();
+        em.persist(agendamento);
+        em.getTransaction().commit();
+    }
 
-    @Query("SELECT s.nome, COUNT(a.id) FROM Agendamento a JOIN a.servico s GROUP BY s.nome")
-    List<Object[]> quantidadePorServico();
+    public Agendamento buscarPorId(Long id) {
+        return em.find(Agendamento.class, id);
+    }
+
+    public List<Agendamento> buscarTodos() {
+        return em.createQuery("SELECT a FROM Agendamento a", Agendamento.class).getResultList();
+    }
+
+    public void atualizar(Agendamento agendamento) {
+        em.getTransaction().begin();
+        em.merge(agendamento);
+        em.getTransaction().commit();
+    }
+
+    public void deletar(Long id) {
+        em.getTransaction().begin();
+        Agendamento agendamento = em.find(Agendamento.class, id);
+        if (agendamento != null) {
+            em.remove(agendamento);
+        }
+        em.getTransaction().commit();
+    }
 }
